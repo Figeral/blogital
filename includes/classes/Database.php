@@ -5,7 +5,7 @@ class Database
 
     const SELECTSINGLE = 1;
     const SELECTALL = 2;
-    const EXECUTE = 3;
+    const EXECUTE = 3; // here this property will help our class queryDB know when we want to do other operation than selection.
 
     private $pdo;
     private static $instance = null;
@@ -28,15 +28,20 @@ class Database
     {
         return self::$pdo;
     }
-    public function queryDB($values, $query,  $mode = 1)
+    public function queryDB(null|array $values, $query,  $mode = 1)
     {
         //where $values is a multidimensional array containing each param and value  to bind
         // and initializing the default mode to 1 meaning fetch type lazy . ie fetching with key integer index or words
+
         $stmt = $this->pdo->prepare($query);
-        foreach ($values as $valueToBind) {
-            $stmt->bindValue($valueToBind[0], $valueToBind[1], $valueToBind[2], $valueToBind[3]);
-        };
+        if (isset($values) && $values != null) {
+            foreach ($values as $valueToBind) {
+                $stmt->bindValue($valueToBind[0], $valueToBind[1]);
+            };
+        }
+
         $stmt->execute();
+
 
         //  from doc
         //    fetch -> returns the next row of the result set 
@@ -48,9 +53,9 @@ class Database
         if ($mode != self::SELECTSINGLE && $mode != self::SELECTALL && $mode != self::EXECUTE) {
             throw new Exception("Selection mode undefined , counld not proceed the query");
         } elseif ($mode === self::SELECTSINGLE) {
-            $stmt->fetch(PDO::FETCH_LAZY);
+            return  array($stmt->fetch(PDO::FETCH_LAZY));
         } elseif ($mode === self::SELECTALL) {
-            $stmt->fetchAll(PDO::FETCH_LAZY);
+            return (array)$stmt->fetchAll(PDO::FETCH_LAZY);
         }
     }
 }
